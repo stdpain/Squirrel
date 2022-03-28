@@ -1,1 +1,4 @@
-CREATE TABLE v0 ( v1 INTEGER ) ; INSERT INTO v0 ( v1 , v1 , v1 ) VALUES ( 4294967295 , 10 , 10 ) ,( 10 , 1 , NULL ) ,( 1.100000 , '' , 1 ) ,( 10 , 10 , NULL ) ,( 1 , 10 , 10 ) ,( 2 , 10 , 0 ) ,( 3 , 10 , 10 ) ; SELECT * FROM v0 NOT INDEXED NATURAL JOIN v0 UNION SELECT DISTINCT * FROM v0 ORDER BY v1 DESC ; SELECT min ( random () ) FROM v0 ORDER BY v1 * 10 ; 
+CREATE TABLE v0 ( v1 INTEGER, v2 INTEGER, v3 INTEGER  ) ; 
+INSERT INTO v0 ( v1 , v2 , v3 ) VALUES ( 4294967295 , 10 , 10 ) ,( 10 , 1 , NULL ) ,( 1.100000 , '12' , 1 ) ,( 10 , 10 , NULL ) ,( 1 , 10 , 10 ) ,( 2 , 10 , 0 ) ,( 3 , 10 , 10 ) ; 
+SELECT l.v1,l.v2,l.v3 FROM v0 l JOIN v0 r on l.v1=r.v1 and l.v2=r.v2 and l.v3=r.v3 UNION SELECT DISTINCT * FROM v0 ORDER BY v1 DESC ; 
+SELECT min ( random () ), v1 FROM v0 GROUP BY v1 ORDER BY v1 * 10 ; 

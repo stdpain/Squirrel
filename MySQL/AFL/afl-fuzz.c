@@ -125,8 +125,15 @@ static SQLSTATUS execute_result;
 deque<char*> g_previous_input;
 class MysqlClient{
   public:
-    MysqlClient(const char * host, char * user_name, char * passwd):
-        host_(host), user_name_(user_name), passwd_(passwd), counter_(0){}
+    MysqlClient():
+        host_(nullptr), user_name_(nullptr), passwd_(nullptr),port_(0), counter_(0){}
+
+    void init(char * host, char * user_name, char * passwd, char* port) {
+      host_ = host;
+      user_name_ = user_name;
+      passwd_ = passwd;
+      port_ = atoi(port);
+    }
 
     bool connect(){
       string dbname;
@@ -134,7 +141,7 @@ class MysqlClient{
       if(mysql_init(&m_) == NULL) return false;
 
       dbname = "test" + std::to_string(database_id);
-      if(mysql_real_connect(&m_, host_, user_name_, passwd_, dbname.c_str(), 0, NULL, CLIENT_MULTI_STATEMENTS)== NULL){
+      if(mysql_real_connect(&m_, host_, user_name_, passwd_, dbname.c_str(), port_, NULL, CLIENT_MULTI_STATEMENTS)== NULL){
         fprintf(stderr, "Connection error1 \n", mysql_errno(&m_), mysql_error(&m_));
         disconnect();
         counter_++;
@@ -153,7 +160,7 @@ class MysqlClient{
 
       database_id += 1;
       if(mysql_init(&tmp_m) == NULL) {mysql_close(&tmp_m); return false;}
-      if(mysql_real_connect(&tmp_m, host_, user_name_, passwd_, "fuck", 0, NULL, CLIENT_MULTI_STATEMENTS)== NULL){
+      if(mysql_real_connect(&tmp_m, host_, user_name_, passwd_, "fuck", port_, NULL, CLIENT_MULTI_STATEMENTS)== NULL){
         fprintf(stderr, "Connection error3 \n", mysql_errno(&tmp_m), mysql_error(&tmp_m));
         mysql_close(&tmp_m);
         return false;
@@ -212,6 +219,13 @@ class MysqlClient{
         return kServerCrash;
       }
 
+    if (mysql_errno(&m_)) {
+      std::string str = mysql_error(&m_);
+      if (str.find("Backend") != std::string::npos || str.find("rpc") != std::string::npos || str.find("backend") != std::string::npos) {
+        return kServerCrash;
+      }
+    }
+
       auto res = kNormal;
 #ifdef COUNT_ERROR
       res = correctness;  
@@ -234,7 +248,7 @@ class MysqlClient{
       MYSQL tmp_m;
 
       if(mysql_init(&tmp_m) == NULL) {mysql_close(&tmp_m); return false;}
-      if(mysql_real_connect(&tmp_m, host_, user_name_, passwd_, "fuck", 0, NULL, CLIENT_MULTI_STATEMENTS)== NULL){
+      if(mysql_real_connect(&tmp_m, host_, user_name_, passwd_, "fuck", port_, NULL, CLIENT_MULTI_STATEMENTS)== NULL){
         fprintf(stderr, "Connection error2 \n", mysql_errno(&tmp_m), mysql_error(&tmp_m));
         mysql_close(&tmp_m);
         return false;
@@ -269,6 +283,7 @@ class MysqlClient{
     char * user_name_;
     char * passwd_;
     bool is_first_time;
+    int port_;
     unsigned counter_; //odd for "test", even for "test2"
 };
 
@@ -280,7 +295,7 @@ int g_child_pid = -1;
 char* g_current_input = NULL;
 char* g_libary_path;
 IR* g_current_ir = NULL;
-MysqlClient g_mysqlclient((char *)"localhost", (char *)"root", NULL);
+MysqlClient g_mysqlclient;
 
 //MysqlClient g_psql_client;
 
@@ -6453,6 +6468,7 @@ char* g_client_path;
 int main(int argc, char** argv) {
 
   //test_mutate();
+  g_mysqlclient.init(getenv("MYSQL_HOST"), getenv("MYSQL_USER"), getenv("MYSQL_PASSWD"), getenv("MYSQL_PORT"));
 
   is_server_up = -1;
   s32 opt;
